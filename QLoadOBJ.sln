@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QLoadOBJ", "QLoadOBJ.vcxproj", "{652F9B03-ED67-399F-A7C3-BAFDF8443C1F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{652F9B03-ED67-399F-A7C3-BAFDF8443C1F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{652F9B03-ED67-399F-A7C3-BAFDF8443C1F}.Debug|Win32.Build.0 = Debug|Win32
+		{652F9B03-ED67-399F-A7C3-BAFDF8443C1F}.Release|Win32.ActiveCfg = Release|Win32
+		{652F9B03-ED67-399F-A7C3-BAFDF8443C1F}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
