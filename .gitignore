@@ -1,8 +1,18 @@
+
+
+
+
+
+
 # Compiled Object files
 *.slo
 *.lo
 *.o
 *.obj
+
+# Precompiled Headers
+*.gch
+*.pch
 
 [Dd]ebug/
 [Rr]elease/
@@ -12,10 +22,6 @@ build/
 [Oo]bj/
 [Ll]og/
 [Ll]og.txt
-
-# Precompiled Headers
-*.gch
-*.pch
 
 # Compiled Dynamic libraries
 *.so
@@ -36,3 +42,11 @@ build/
 *.exe
 *.out
 *.app
+
+
+
+
+
+
+
+
