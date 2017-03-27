@@ -4,10 +4,11 @@
 #include<qopenglwidget.h>
 #include<QtOpenGL\qgl.h>
 #include<qopenglfunctions.h>
-//#include <glmodel.h>
 #include<QKeyEvent>
 #include<gltrackball.h>
 #include<_glmodel.h>
+#include<glpick.h>
+
 class GLMainWindow;
 class GLCanvas :public QGLWidget//public QOpenGLWidget
 {
@@ -16,13 +17,8 @@ public:
 	GLCanvas(QWidget *parent = 0);
 	~GLCanvas();
 	void InitParameter();
-	//GLMmodel* getModel();
-	//int RoundUpToTheNextHighestPowerOf2(unsigned int v);
 	void BindTexture(_GLModel* model);
-	// The OBJ model
-	//GLMmodel* pModel;
-	_GLModel* pModel;
-	double pModelViewMatrix[16];
+	void ReviewInit();//恢复初始状态
 protected:
 	void mousePressEvent(QMouseEvent *e);
 	void mouseReleaseEvent(QMouseEvent *e);
@@ -35,7 +31,13 @@ protected:
 	void resizeGL(int w, int h); //会自动刷新屏幕
 	void paintGL();
 
+	//变量
+public:
+	_GLModel* pModel;
+	bool isPickFace;//用来标示当前是否开始拾取面~
 
+	double pModelViewMatrix[16];//模型视图
+	double pProjectMatrix[16];//投影视图
 private:
 	GLMainWindow *mainWindow;
 	bool leftButtonPress;//当前左键按下

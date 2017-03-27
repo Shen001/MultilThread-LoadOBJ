@@ -5,6 +5,7 @@ using namespace std;
 #include<_glmodel.h>
 #include<transform.h>
 #include<gleasymath.h>
+#include<assert.h>
 
 #ifndef GL_PI
 #define GL_PI 3.14159265358979323846
@@ -160,15 +161,16 @@ _GLModel* _glReadOBJ(QString filename)
 		else if (str[0] == 'u')//材质的名称
 		{
 			list = str.split(split);
-			currentMaterialName = list[1];
+			currentMaterialName = list[1].trimmed();
 		}
 		else if (str[0] == 'f')//面
 		{
 			str = str.trimmed();
 			list = str.split(split);
-			
+
 			f = new Face();
 			f->materialName = currentMaterialName;
+			f->isS = false;
 
 			if (list[1].contains('/'))
 			{
@@ -205,8 +207,8 @@ void _glDelete(_GLModel* model)
 		delete model;
 	//释放model中的集合对象？
 }
-//计算面的法向量
 
+//计算面的法向量
 void _glFacetNormals(_GLModel* model)
 {
 	FacetNormal *fn;
@@ -214,13 +216,12 @@ void _glFacetNormals(_GLModel* model)
 	float v[3];
 
 	float cross[3];
-
 	for (int i = 0; i < model->list_Faces.length(); i++)
 	{
 		fn = new FacetNormal();
 		Point3 p0 = model->list_Vertices[model->list_Faces[i].list_index_Points[0]];
 		Point3 p1 = model->list_Vertices[model->list_Faces[i].list_index_Points[1]];
-		//Point3 p2 = model->list_Vertices[model->list_Faces[i].list_index_Points[2]];
+		//Point3 p2 = model->list_Vertices[model->list_Faces[i].list_index_Points[2]];//在对于三角形时才有效
 
 		Point3 pn = model->list_Vertices[model->list_Faces[i].list_index_Points[model->list_Faces[i].list_index_Points.length() - 1]];//必须使用最后一点才成功
 
@@ -228,16 +229,12 @@ void _glFacetNormals(_GLModel* model)
 		u[_Y] = p1._Y - p0._Y;
 		u[_Z] = p1._Z - p0._Z;
 
-		//v[_X] = p2._X - p0._X;
-		//v[_Y] = p2._Y - p0._Y;
-		//v[_Z] = p2._Z - p0._Z;
-
 		v[_X] = pn._X - p0._X;
 		v[_Y] = pn._Y - p0._Y;
 		v[_Z] = pn._Z - p0._Z;
 
-		vCross(u, v, cross);
-		vNormal(cross);
+		vCross(u, v, cross);//计算交叉乘积
+		vNormal(cross);//单位化
 
 		model->list_Faces[i].index_Face = i;
 		fn->NX = cross[0];
@@ -248,7 +245,7 @@ void _glFacetNormals(_GLModel* model)
 }
 
 //将图形移到屏幕中间来
-float _glUnitize(_GLModel* model)
+float _glUnitize(_GLModel* model, float* center)
 {
 	float maxx, minx, maxy, miny, maxz, minz;
 	float cx, cy, cz, w, h, d;
@@ -290,7 +287,6 @@ float _glUnitize(_GLModel* model)
 		cz = (maxz + minz) / 2.0;
 
 		scale = 2.0 / _glmMax(w, _glmMax(h, d));
-		//scale = _glmMax(w, _glmMax(h, d));
 
 		//将中心按照比例转换
 		for (size_t i = 0; i < model->num_Vertices; i++)
@@ -303,17 +299,39 @@ float _glUnitize(_GLModel* model)
 			model->list_Vertices[i]._Y *= scale;
 			model->list_Vertices[i]._Z *= scale;
 		}
+
+		center[0] = 0.0;
+		center[1] = 0.0;
+		center[2] = 0.0;
+
+		//center[0] = -cx;
+		//center[1] = -cy;
+		//center[2] = -cz;
 	}
+
 	return scale;
+}
+
+int GetIndexFromMaterialName(_GLModel* model, QString materialName)
+{
+	for (size_t i = 0; i < model->num_Materials; i++)
+	{
+		if (materialName == model->list_Materials[i].materialName)
+			return --i;
+	}
+	return -1;
 }
 
 void _glConstructIndexFromName(_GLModel* model)
 {
+	int index;
 	for (size_t i = 0; i < model->num_Faces; i++)
 	{
 		QString name = model->list_Faces[i].materialName;
-		int index = name.toInt() - 1;
-		model->list_Faces[i].index_Text = index;
+		index = GetIndexFromMaterialName(model, name);
+		if (index > 0)
+			model->list_Faces[i].index_Text = index;
+		model->list_Faces[i].index_Name = ++index;
 	}
 }
 
@@ -334,35 +352,57 @@ void _glDraw(_GLModel* model, size_t mode)
 		mode &= ~_GL_TEXTURE;
 	}
 	glPushMatrix();
-	//glTranslatef(model->Center[0], model->Center[1], model->Center[2]);
+	glTranslatef(model->center[0], model->center[1], model->center[2]);
 
 	for (size_t i = 0; i < model->num_Faces; i++)
 	{
 		Face f = model->list_Faces[i];
+
 		if (mode&_GL_TEXTURE)
 		{
 			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D, model->textureArray[f.index_Text]);
+			if (f.index_Text != -1)//绘制指定的纹理一定要将对应的纹理先启动绑定
+				glBindTexture(GL_TEXTURE_2D, model->textureArray[f.index_Text]);
 		}
+		if (f.isS)
+			glColor3f(1.0f, 0.0f, 0.0f); // 颜色设置为红色  
+		else glColor3f(1.0f, 1.0f, 0.0f);//黄色
+
 		glBegin(GL_POLYGON);
 		//glBegin(GL_QUADS);
 		if (mode&_GL_FLAT)
-			glNormal3f(model->list_FaceNormal[f.index_Face].NX, model->list_FaceNormal[f.index_Face].NY, model->list_FaceNormal[f.index_Face].NZ);
+		{
+			FacetNormal fn = model->list_FaceNormal[f.index_Face];
+			glNormal3f(fn.NX, fn.NY, fn.NZ);
+		}
 
 		for (int k = 0; k < f.list_index_Points.size(); k++)
 		{
+
 			if (mode&_GL_TEXTURE)
 			{
-				glTexCoord2f(model->list_Textcoords[f.list_index_TextCoords[k]].U, model->list_Textcoords[f.list_index_TextCoords[k]].V);
+				TextCoords tc = model->list_Textcoords[f.list_index_TextCoords[k]];
+				glTexCoord2f(tc.U, tc.V);
 			}
 			if (mode&_GL_SMOOTH&&f.list_index_VertNormals.size()>0)
 			{
-				glNormal3f(model->list_Normals[f.list_index_VertNormals[k]]._NX, model->list_Normals[f.list_index_VertNormals[k]]._NY, model->list_Normals[f.list_index_VertNormals[k]]._NZ);
+				VertNormals vn = model->list_Normals[f.list_index_VertNormals[k]];
+				glNormal3f(vn._NX, vn._NY, vn._NZ);
 			}
-			glVertex3f(model->list_Vertices[f.list_index_Points[k]]._X, model->list_Vertices[f.list_index_Points[k]]._Y, model->list_Vertices[f.list_index_Points[k]]._Z);
+			Point3 p = model->list_Vertices[f.list_index_Points[k]];
+			glVertex3f(p._X, p._Y, p._Z);
+		}
+		glEnd();
+
+		glColor3f(0.0, 0.0, 0.0);
+		glBegin(GL_LINE_STRIP);
+		//glLineWidth(1.5f);
+		for (int j = 0; j < f.list_index_Points.size(); j++)
+		{
+			Point3 p = model->list_Vertices[f.list_index_Points[j]];
+			glVertex3f(p._X, p._Y, p._Z);
 		}
 		glEnd();
 	}
 	glPopMatrix();
-
 }

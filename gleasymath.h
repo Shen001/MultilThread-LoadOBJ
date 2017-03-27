@@ -90,7 +90,13 @@ _glmMax(GLfloat a, GLfloat b)
 		return a;
 	return b;
 }
-
+static GLfloat
+_glmMin(GLfloat a, GLfloat b)
+{
+	if (a < b)
+		return a;
+	return b;
+}
 static GLfloat _glmAbs(GLfloat f)
 {
 	if (f < 0)

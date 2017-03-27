@@ -14,7 +14,7 @@
     <ProjectGuid>{652F9B03-ED67-399F-A7C3-BAFDF8443C1F}</ProjectGuid>
     <RootNamespace>QLoadOBJ</RootNamespace>
     <Keyword>Qt4VSv1.0</Keyword>
-    <ProjectName>QLoadOBJ_01</ProjectName>
+    <ProjectName>QLoadOBJ_04</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -52,6 +52,9 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Platform)\$(Configuration)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">QLoadOBJ</TargetName>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</IgnoreImportLibrary>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>F:\code\readobj\eigenlib\Eigen\src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -204,6 +207,7 @@ endlocal
     <ClInclude Include="gleasymath.h" />
     <ClInclude Include="GeneratedFiles\ui_mainwindow.h" />
     <ClInclude Include="glmodel.h" />
+    <ClInclude Include="glpick.h" />
     <ClInclude Include="gltrackball.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="glapplication.h" />

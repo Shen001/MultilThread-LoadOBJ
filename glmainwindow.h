@@ -16,6 +16,8 @@ public:
 
 public:
 	void OpenOBJFile();//打开obj路径文件
+	void RestoreView();
+	void StartPickFace();
 	_GLModel* getObjModel();//获取当前的模型
 
 private:
@@ -24,9 +26,13 @@ private:
 	GLCanvas *glCancas;
 
 	QAction *importObjAction;
+	QAction *restoreMatrixAction;
+	QAction *pickFaceAction;
+
 	QMenu *fileMenu;
 	QToolBar *fileToolBar;
 
+	
 public:
 
 };

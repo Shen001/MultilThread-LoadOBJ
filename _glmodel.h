@@ -74,18 +74,22 @@ struct Face
 {
 	QString materialName;//对应材质名称
 
-	size_t index_Face;//平面法向量的索引
-	size_t index_Text;
+	int index_Face;//平面法向量的索引
+	int index_Text;//
+	int index_Name;//pickname
 
 	QList<int> list_index_Points;//面的点集合在model中的索引
 	QList<int> list_index_TextCoords;//
 	QList<int> list_index_VertNormals;
+
+	bool isS;//设置是否被选中状态，被选中则渲染为红色
 };
 
 //模型类
 class _GLModel
 {
 public:
+
 
 	QString path;//obj文件路径
 	QString mtllibName;//材质文件名称
@@ -105,10 +109,11 @@ public:
 	QList<QString> list_ImagePath;//贴图路径集合,全路径
 
 	int textureArray[MAX_TEXTURE];//注册纹理数组
+	float center[3];
 };
 
 //将图形显示在屏幕中间
-GLfloat _glUnitize(_GLModel* model);
+GLfloat _glUnitize(_GLModel* model,float *center);
 //计算模型维度（即，x，y，z方向上的最大值）
 void _glDimensions(_GLModel* model, GLfloat* dimensions);
 //放大缩小指定的因子
