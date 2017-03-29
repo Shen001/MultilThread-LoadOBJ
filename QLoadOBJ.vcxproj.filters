@@ -95,6 +95,12 @@
     <ClCompile Include="_glmodel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc__glBackgroundThread.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc__glBackgroundThread.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.h">
@@ -107,6 +113,9 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="gltocdialog.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="_glBackgroundThread.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

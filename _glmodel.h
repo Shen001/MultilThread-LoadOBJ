@@ -18,7 +18,8 @@ using namespace std;
 #define _GL_TEXTURE (1<<2)//4
 #define _GL_COLOR (1<<3)//8
 #define _GL_METERIAL (1<<4)//16
-
+#define _GL_SELECT (1<<5)//32 选择模式
+#define _GL_RENDER (1<<6)//64 渲染模式
 //材质
 struct  Material
 {
@@ -99,6 +100,7 @@ public:
 	size_t num_Materials;//材质个数
 	size_t num_Faces;//面的个数
 
+	QList<Point3> list_Origin_Vertics;//原始坐标的点集
 	QList<Point3> list_Vertices;//节点对象集合
 	QList<VertNormals> list_Normals;//节点向量集合
 	QList<TextCoords> list_Textcoords;//纹理坐标集合
@@ -109,7 +111,10 @@ public:
 	QList<QString> list_ImagePath;//贴图路径集合,全路径
 
 	int textureArray[MAX_TEXTURE];//注册纹理数组
+	std::vector<unsigned int> textVector;
+
 	float center[3];
+	size_t currentSelectedFace;//当前选中面的索引
 };
 
 //将图形显示在屏幕中间

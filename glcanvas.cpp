@@ -41,23 +41,28 @@ void GLCanvas::initializeGL()
 
 	glEnable(GL_COLOR_MATERIAL);//设置了才显示面颜色
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);//不剔除内部显示
 	// Setup other misc features. 混合要素
 	glEnable(GL_LIGHTING);
 	glEnable(GL_NORMALIZE);
 
-	glEnable(GL_BLEND);
+	//glEnable(GL_BLEND);
 	glEnable(GL_LINE_SMOOTH);//启用发走样之后可以设置小数线宽
 
 	glEnable(GL_POLYGON_OFFSET_FILL);
 	glPolygonOffset(1.0f, 0.0f);
 	//
-	glShadeModel(GL_SMOOTH);
+	glShadeModel(GL_SMOOTH);//颜色模式
 
 	// Setup lighting model.//光照模型
-	GLfloat light_model_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat light0_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat light0_direction[] = { 0.0f, 0.0f, 10.0f, 0.0f };
+	//GLfloat light_model_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	//GLfloat light0_diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	//GLfloat light0_direction[] = { 0.0f, 0.0f, 10.0f, 0.0f };
+	//GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	GLfloat light_model_ambient[] = { 0.125f, 0.125f, 0.125f, 1.0f };
+	GLfloat light0_diffuse[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+	GLfloat light0_direction[] = { 0.0f, 0.0f, 1.0f, 0.0f };
 	GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	glLightfv(GL_LIGHT0, GL_POSITION, light0_direction);
@@ -74,16 +79,12 @@ void GLCanvas::paintGL()
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-
 	glTranslated(0.0, 0.0, -5.0);//实际调用了glMultMatrixd
-	//glTranslated(0.0, 0.0, -scale);
-
 	glMultMatrixd(pModelViewMatrix);
 	if (pModel)
 	{
-		//glmDraw(pModel, GLM_FLAT | GLM_TEXTURE);
+		_glDraw(pModel, _GL_FLAT|_GL_TEXTURE);
 		//_glDraw(pModel, _GL_FLAT);
-		_glDraw(pModel, _GL_FLAT | _GL_TEXTURE);
 		//_glDraw(pModel, _GL_SMOOTH | _GL_TEXTURE);
 		//_glDraw(pModel, _GL_SMOOTH);
 	}
@@ -100,18 +101,6 @@ void GLCanvas::resizeGL(int w, int h)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
-
-////初始化面ID
-//void GLCanvas::InitPickName(GLenum mode)
-//{
-//	if (mode == GL_SELECT)
-//	{
-//		for (size_t i = 0; i < pModel->num_Faces; i++)
-//		{
-//			glLoadName(pModel->list_Faces[i].index_Name);
-//		}
-//	}
-//}
 
 //清除选择集
 void ClearSelect(_GLModel* model)
@@ -133,7 +122,7 @@ void GLCanvas::mousePressEvent(QMouseEvent *e)
 		{
 			if (isPickFace)//拾取面操作
 			{
-				//bool isIn = false;
+				ClearSelect(pModel);//先清除选择集
 				int x = e->x();
 				int y = e->y();
 
@@ -199,31 +188,27 @@ void GLCanvas::mousePressEvent(QMouseEvent *e)
 
 				//*******************TEST_3*****************
 				GLuint selectBuffer[PICK_BUFFER_SIZE];
-				GLint hits;GLuint nearHit = 0;
+				GLint hits;
+				GLuint nearHit = 0;
 				GLint viewport[4];
 
 				glGetIntegerv(GL_VIEWPORT, viewport);
 				glSelectBuffer(PICK_BUFFER_SIZE, selectBuffer);
+
 				glRenderMode(GL_SELECT);
 				glInitNames();
 				glPushName(0);//如果是空的会报错，所以需要先添加一个0
 
 				glMatrixMode(GL_PROJECTION);
 				glPushMatrix();
-
 				glLoadIdentity();
-				gluPickMatrix(x, viewport[3] - y, N_PICK, N_PICK, viewport);
-				gluPerspective(45.0f, (float)this->width() / (float)this->height(), 0.1, 100.0);
-				//InitPickName(GL_SELECT);
-				for (size_t i = 0; i < pModel->num_Faces; i++)
-				{
-					glLoadName(pModel->list_Faces[i].index_Name);
-				}
+				gluPickMatrix(x, viewport[3] - y + viewport[1], N_PICK, N_PICK, viewport);
+				gluPerspective(45.0f, (float)viewport[2] / (float)viewport[3], 0.1, 100.0);
 
+				_glDraw(pModel, _GL_FLAT | _GL_SELECT);
 				glPopMatrix();
 
 				hits = glRenderMode(GL_RENDER);
-				glMatrixMode(GL_MODELVIEW);
 				if (hits > 0)
 				{
 					int n = 0;
@@ -235,12 +220,13 @@ void GLCanvas::mousePressEvent(QMouseEvent *e)
 							n = i;
 							minz = selectBuffer[1 + i * 4];
 						}
-						nearHit = selectBuffer[3 + n * 4];
 					}
+					nearHit = selectBuffer[3 + n * 4];
 				}
 				if (nearHit > 0)
 				{
-					pModel->list_Faces[--nearHit].isS = true;
+					pModel->list_Faces[nearHit - 1].isS = true;
+					pModel->currentSelectedFace = nearHit - 1;
 				}
 			}
 			else
@@ -307,7 +293,7 @@ void GLCanvas::mouseMoveEvent(QMouseEvent *e)
 			glLoadMatrixd(pMatrix);//将栈顶矩阵变成该旋转矩阵
 
 			glMultMatrixd(pModelViewMatrix);//栈顶矩阵左乘该矩阵，即旋转矩阵左乘当前矩阵
-			glGetDoublev(GL_MODELVIEW_MATRIX, pModelViewMatrix);
+			glGetDoublev(GL_MODELVIEW_MATRIX, pModelViewMatrix);//获得处理过后的当前矩阵，然后在刷新中调用单位矩阵再次左乘该矩阵
 
 			oldX = e->x();
 			oldY = e->y();

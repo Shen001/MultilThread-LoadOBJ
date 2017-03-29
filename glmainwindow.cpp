@@ -92,10 +92,10 @@ void GLMainWindow::OpenOBJFile()
 
 	_glConstructIndexFromName(glCancas->pModel);
 	//°ó¶¨textture
-	//glCancas->BindTexture(glCancas->pModel);
-
+	glCancas->BindTexture(glCancas->pModel);
+	glCancas->scale = _glUnitize(glCancas->pModel, glCancas->pModel->center);
 	_glFacetNormals(glCancas->pModel);
-	glCancas ->scale = _glUnitize(glCancas->pModel,glCancas->pModel->center);
+
 
 	// Init the modelview matrix as an identity matrix
 	glMatrixMode(GL_MODELVIEW);

@@ -57,7 +57,7 @@ void _glReadMTL(_GLModel *model, QString fileName)
 
 			QString str1 = list[1];
 			material->materialName = str1.trimmed();
-			material->index_Material = ++index;
+			material->index_Material = index+1;
 			model->num_Materials++;
 		}
 		else if (str[0] == 'm')//贴图路径
@@ -114,6 +114,7 @@ _GLModel* _glReadOBJ(QString filename)
 	model->num_Normals = 0;
 	model->num_Textcoords = 0;
 	model->num_Vertices = 0;
+	model->currentSelectedFace = -1;
 
 	Point3 *v;
 	TextCoords *vt;
@@ -155,6 +156,7 @@ _GLModel* _glReadOBJ(QString filename)
 				v = new Point3();
 				v->_X = list[_Y].toFloat(); v->_Y = list[_Z].toFloat(); v->_Z = list[_W].toFloat();
 				model->num_Vertices++;
+				model->list_Origin_Vertics.push_back(*v);
 				model->list_Vertices.push_back(*v);
 			}
 		}
@@ -219,11 +221,11 @@ void _glFacetNormals(_GLModel* model)
 	for (int i = 0; i < model->list_Faces.length(); i++)
 	{
 		fn = new FacetNormal();
-		Point3 p0 = model->list_Vertices[model->list_Faces[i].list_index_Points[0]];
-		Point3 p1 = model->list_Vertices[model->list_Faces[i].list_index_Points[1]];
+		Point3 p0 = model->list_Vertices.at(model->list_Faces.at(i).list_index_Points[0]);
+		Point3 p1 = model->list_Vertices.at(model->list_Faces.at(i).list_index_Points[1]);
 		//Point3 p2 = model->list_Vertices[model->list_Faces[i].list_index_Points[2]];//在对于三角形时才有效
 
-		Point3 pn = model->list_Vertices[model->list_Faces[i].list_index_Points[model->list_Faces[i].list_index_Points.length() - 1]];//必须使用最后一点才成功
+		Point3 pn = model->list_Vertices.at(model->list_Faces.at(i).list_index_Points.at(model->list_Faces.at(i).list_index_Points.length() - 1));//必须使用最后一点才成功
 
 		u[_X] = p1._X - p0._X;
 		u[_Y] = p1._Y - p0._Y;
@@ -237,6 +239,7 @@ void _glFacetNormals(_GLModel* model)
 		vNormal(cross);//单位化
 
 		model->list_Faces[i].index_Face = i;
+		model->list_Faces[i].index_Name = i+1;
 		fn->NX = cross[0];
 		fn->NY = cross[1];
 		fn->NZ = cross[2];
@@ -250,31 +253,31 @@ float _glUnitize(_GLModel* model, float* center)
 	float maxx, minx, maxy, miny, maxz, minz;
 	float cx, cy, cz, w, h, d;
 	float scale;
-
-	if (model&&model->list_Vertices.size() > 0)
+	
+	if (model&&model->list_Origin_Vertics.size() > 0)
 	{
-		maxx = minx = model->list_Vertices[0]._X;
-		maxy = miny = model->list_Vertices[0]._Y;
-		maxz = minz = model->list_Vertices[0]._Z;
+		maxx = minx = model->list_Vertices.at(0)._X;
+		maxy = miny = model->list_Vertices.at(0)._Y;
+		maxz = minz = model->list_Vertices.at(0)._Z;
 
 		for (size_t i = 1; i < model->num_Vertices; i++)
 		{
-			if (maxx < model->list_Vertices[i]._X)
-				maxx = model->list_Vertices[i]._X;
-			if (minx > model->list_Vertices[i]._X)
-				minx = model->list_Vertices[i]._X;
+			if (maxx < model->list_Vertices.at(i)._X)
+				maxx = model->list_Vertices.at(i)._X;
+			if (minx > model->list_Vertices.at(i)._X)
+				minx = model->list_Vertices.at(i)._X;
 
 
-			if (maxy < model->list_Vertices[i]._Y)
-				maxy = model->list_Vertices[i]._Y;
-			if (miny > model->list_Vertices[i]._Y)
-				miny = model->list_Vertices[i]._Y;
+			if (maxy < model->list_Vertices.at(i)._Y)
+				maxy = model->list_Vertices.at(i)._Y;
+			if (miny > model->list_Vertices.at(i)._Y)
+				miny = model->list_Vertices.at(i)._Y;
 
 
-			if (maxz < model->list_Vertices[i]._Z)
-				maxz = model->list_Vertices[i]._Z;
-			if (minz > model->list_Vertices[i]._Z)
-				minz = model->list_Vertices[i]._Z;
+			if (maxz < model->list_Vertices.at(i)._Z)
+				maxz = model->list_Vertices.at(i)._Z;
+			if (minz > model->list_Vertices.at(i)._Z)
+				minz = model->list_Vertices.at(i)._Z;
 		}
 
 		w = _glmAbs(maxx) + _glmAbs(minx);
@@ -303,10 +306,6 @@ float _glUnitize(_GLModel* model, float* center)
 		center[0] = 0.0;
 		center[1] = 0.0;
 		center[2] = 0.0;
-
-		//center[0] = -cx;
-		//center[1] = -cy;
-		//center[2] = -cz;
 	}
 
 	return scale;
@@ -316,8 +315,8 @@ int GetIndexFromMaterialName(_GLModel* model, QString materialName)
 {
 	for (size_t i = 0; i < model->num_Materials; i++)
 	{
-		if (materialName == model->list_Materials[i].materialName)
-			return --i;
+		if (materialName == model->list_Materials.at(i).materialName)
+			return (i-1);
 	}
 	return -1;
 }
@@ -327,11 +326,10 @@ void _glConstructIndexFromName(_GLModel* model)
 	int index;
 	for (size_t i = 0; i < model->num_Faces; i++)
 	{
-		QString name = model->list_Faces[i].materialName;
+		QString name = model->list_Faces.at(i).materialName;
 		index = GetIndexFromMaterialName(model, name);
 		if (index > 0)
 			model->list_Faces[i].index_Text = index;
-		model->list_Faces[i].index_Name = ++index;
 	}
 }
 
@@ -356,23 +354,24 @@ void _glDraw(_GLModel* model, size_t mode)
 
 	for (size_t i = 0; i < model->num_Faces; i++)
 	{
-		Face f = model->list_Faces[i];
-
+		Face f = model->list_Faces.at(i);
+		if (mode&_GL_SELECT)
+			glLoadName(f.index_Name);
 		if (mode&_GL_TEXTURE)
 		{
 			glEnable(GL_TEXTURE_2D);
-			if (f.index_Text != -1)//绘制指定的纹理一定要将对应的纹理先启动绑定
+			if (f.index_Text > -1)//绘制指定的纹理一定要将对应的纹理先启动绑定
 				glBindTexture(GL_TEXTURE_2D, model->textureArray[f.index_Text]);
 		}
 		if (f.isS)
-			glColor3f(1.0f, 0.0f, 0.0f); // 颜色设置为红色  
-		else glColor3f(1.0f, 1.0f, 0.0f);//黄色
+			glColor3f(1.0f, 132.0/255.0, 132.0/255.0); // 颜色设置为红色  
+		else glColor3f(1.0f, 1.0f, 1.0f);
 
 		glBegin(GL_POLYGON);
 		//glBegin(GL_QUADS);
-		if (mode&_GL_FLAT)
+		if (mode&_GL_FLAT)//自己建立的面向量
 		{
-			FacetNormal fn = model->list_FaceNormal[f.index_Face];
+			FacetNormal fn = model->list_FaceNormal.at(f.index_Face);
 			glNormal3f(fn.NX, fn.NY, fn.NZ);
 		}
 
@@ -381,28 +380,27 @@ void _glDraw(_GLModel* model, size_t mode)
 
 			if (mode&_GL_TEXTURE)
 			{
-				TextCoords tc = model->list_Textcoords[f.list_index_TextCoords[k]];
+				TextCoords tc = model->list_Textcoords.at(f.list_index_TextCoords.at(k));
 				glTexCoord2f(tc.U, tc.V);
 			}
 			if (mode&_GL_SMOOTH&&f.list_index_VertNormals.size()>0)
-			{
-				VertNormals vn = model->list_Normals[f.list_index_VertNormals[k]];
+			{//smooth是OBJ中读取的节点normal值
+				VertNormals vn = model->list_Normals.at(f.list_index_VertNormals.at(k));
 				glNormal3f(vn._NX, vn._NY, vn._NZ);
 			}
-			Point3 p = model->list_Vertices[f.list_index_Points[k]];
+			Point3 p = model->list_Vertices.at(f.list_index_Points.at(k));
 			glVertex3f(p._X, p._Y, p._Z);
 		}
 		glEnd();
 
-		glColor3f(0.0, 0.0, 0.0);
-		glBegin(GL_LINE_STRIP);
-		//glLineWidth(1.5f);
-		for (int j = 0; j < f.list_index_Points.size(); j++)
-		{
-			Point3 p = model->list_Vertices[f.list_index_Points[j]];
-			glVertex3f(p._X, p._Y, p._Z);
-		}
-		glEnd();
+		//glColor3f(0.0, 0.0, 0.0);
+		//glBegin(GL_LINE_STRIP);
+		//for (int j = 0; j < f.list_index_Points.size(); j++)
+		//{
+		//	Point3 p = model->list_Vertices[f.list_index_Points[j]];
+		//	glVertex3f(p._X, p._Y, p._Z);
+		//}
+		//glEnd();
 	}
 	glPopMatrix();
 }
