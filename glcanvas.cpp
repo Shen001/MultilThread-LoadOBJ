@@ -26,6 +26,7 @@ void GLCanvas::InitParameter()
 	oldX = 0;
 	oldY = 0;
 	isPickFace = false;
+	redrawMode = _GL_FLAT|_GL_TEXTURE;
 }
 
 void GLCanvas::initializeGL()
@@ -83,7 +84,9 @@ void GLCanvas::paintGL()
 	glMultMatrixd(pModelViewMatrix);
 	if (pModel)
 	{
-		_glDraw(pModel, _GL_FLAT|_GL_TEXTURE);
+		_glDraw(pModel, this->redrawMode);
+
+
 		//_glDraw(pModel, _GL_FLAT);
 		//_glDraw(pModel, _GL_SMOOTH | _GL_TEXTURE);
 		//_glDraw(pModel, _GL_SMOOTH);
@@ -365,45 +368,49 @@ void GLCanvas::wheelEvent(QWheelEvent *e)
 
 //GLMmodel* GLCanvas::getModel(){ return this->pModel; }
 
-void GLCanvas::BindTexture(_GLModel* model)
+bool GLCanvas::BindTexture()
 {
-	if (model->list_ImagePath.length() == 0)
-		return;
-	for (int i = 0; i < model->list_ImagePath.length(); i++)
+	if (this->pModel->list_ImagePath.length() == 0)
+		return false;
+	for (int i = 0; i < this->pModel->list_ImagePath.length(); i++)
 	{
 		glEnable(GL_TEXTURE_2D);
 		GLint MaxTextureSize;
 		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
 
 		QImage img, imgScaled, imgGL;
-		QFileInfo fi(model->list_ImagePath[i]);
+		QFileInfo fi(this->pModel->list_ImagePath[i]);
 		QString imagePath = fi.absoluteFilePath();
 		imagePath = imagePath.trimmed();
 		bool res = img.load(imagePath);
-		if (res)
-		{
-			int bestW = RoundUpToTheNextHighestPowerOf2(img.width());//计算最接近宽度的2的幂，如1024
-			int bestH = RoundUpToTheNextHighestPowerOf2(img.height());
-			while (bestW > MaxTextureSize) bestW /= 2;
-			while (bestH > MaxTextureSize) bestH /= 2;
+		if (!res)
+			return false;
 
-			imgScaled = img.scaled(bestW, bestH, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-			imgGL = convertToGLFormat(imgScaled);//该方法是QGLWidget插件独有的方法，所以该方法是在你的QGLWidget中实现的
+		//成功开始绑定纹理
+		int bestW = RoundUpToTheNextHighestPowerOf2(img.width());//计算最接近宽度的2的幂，如1024
+		int bestH = RoundUpToTheNextHighestPowerOf2(img.height());
+		while (bestW > MaxTextureSize) bestW /= 2;
+		while (bestH > MaxTextureSize) bestH /= 2;
 
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		imgScaled = img.scaled(bestW, bestH, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+		imgGL = convertToGLFormat(imgScaled);//该方法是QGLWidget插件独有的方法，所以该方法是在你的QGLWidget中实现的
 
-			glGenTextures(1, (GLuint*)&(model->textureArray[i]));//创建
-			glBindTexture(GL_TEXTURE_2D, (GLuint)model->textureArray[i]);//绑定
-			glTexImage2D(GL_TEXTURE_2D, 0, 3, imgGL.width(), imgGL.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, imgGL.bits());
-			gluBuild2DMipmaps(GL_TEXTURE_2D, 3, imgGL.width(), imgGL.height(), GL_RGBA, GL_UNSIGNED_BYTE, imgGL.bits());
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		}
+		//model->textVector.push_back(0);
+		glGenTextures(1, (GLuint*)&(this->pModel->textureArray[i]));//创建
+		glBindTexture(GL_TEXTURE_2D, (GLuint)this->pModel->textureArray[i]);//绑定
+		glTexImage2D(GL_TEXTURE_2D, 0, 3, imgGL.width(), imgGL.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, imgGL.bits());
+		gluBuild2DMipmaps(GL_TEXTURE_2D, 3, imgGL.width(), imgGL.height(), GL_RGBA, GL_UNSIGNED_BYTE, imgGL.bits());
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
 		glDisable(GL_TEXTURE_2D);
+		//glFlush();
 	}
-
+	return true;
 }
 //恢复初始视图
 void GLCanvas::ReviewInit()

@@ -14,8 +14,8 @@ GLMainWindow::GLMainWindow()
 	gltocDialog->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
 	addDockWidget(Qt::LeftDockWidgetArea, gltocDialog);
 
-	glCancas = new GLCanvas(this);
-	setCentralWidget(glCancas);
+	glCanvas = new GLCanvas(this);
+	setCentralWidget(glCanvas);
 
 	//importObjAction = new QAction(QIcon(":/images/import_mesh.png"), tr("&Open OBJ"), this);//需要引用Qt5Gui.lib或者Qt5Guid.lib
 	importObjAction = new QAction(QString::fromLocal8Bit("打开OBJ"), this);
@@ -32,18 +32,38 @@ GLMainWindow::GLMainWindow()
 	pickFaceAction->setCheckable(true);
 	pickFaceAction->setChecked(false);
 
+	//开启纹理贴图
+	textureRenderAction = new QAction(QString::fromLocal8Bit("启用纹理"), this);
+	connect(textureRenderAction, &QAction::triggered, this, &GLMainWindow::StartTexture);
+	textureRenderAction->setCheckable(true);
+	textureRenderAction->setChecked(false);
+	textureRenderAction->setEnabled(false);
 
+	//菜单
 	fileMenu = menuBar()->addMenu(tr("&File"));//需要menubar头文件
 	fileMenu->addAction(importObjAction);
-
+	//工具条
 	fileToolBar = addToolBar(tr("File"));
 	fileToolBar->addAction(importObjAction);
 	fileToolBar->addAction(restoreMatrixAction);
 	fileToolBar->addAction(pickFaceAction);
+	fileToolBar->addAction(textureRenderAction);
 
 }
 
+void GLMainWindow::setTextureActionEnable(bool isEnable)
+{
+	this->textureRenderAction->setEnabled(isEnable);
+}
 
+//初始化纹理的线程
+void GLMainWindow::initialTextureThread()
+{
+	_TextureThread* textureThread = new _TextureThread(glCanvas);
+	connect(textureThread, &_TextureThread::loadReady, this, &GLMainWindow::setTextureActionEnable);
+	connect(textureThread, &_TextureThread::finished, textureThread, &QObject::deleteLater);
+	textureThread->start();
+}
 
 GLMainWindow::~GLMainWindow()
 {
@@ -52,18 +72,18 @@ GLMainWindow::~GLMainWindow()
 
 void GLMainWindow::RestoreView()
 {
-	glCancas->ReviewInit();
+	glCanvas->ReviewInit();
 }
 
 void GLMainWindow::StartPickFace()
 {
-	if (glCancas->pModel&&this->pickFaceAction->isChecked())
+	if (glCanvas->pModel&&this->pickFaceAction->isChecked())
 	{
-		glCancas->isPickFace = true;
+		glCanvas->isPickFace = true;
 	}
 	else
 	{
-		glCancas->isPickFace = false;
+		glCanvas->isPickFace = false;
 	}
 }
 
@@ -75,38 +95,49 @@ void GLMainWindow::OpenOBJFile()
 	if (fileName.isNull())
 		return;
 
-	if (glCancas->pModel)
+	if (glCanvas->pModel)
 	{
-		_glDelete(glCancas->pModel);
-		glCancas->pModel = NULL;
+		_glDelete(glCanvas->pModel);
+		glCanvas->pModel = NULL;
 	}
 
-	glCancas->pModel = _glReadOBJ(fileName);
-	if (!glCancas->pModel)
+	glCanvas->pModel = _glReadOBJ(fileName);
+	if (!glCanvas->pModel)
 	{
 		qDebug(T_Char2Char("无法打开OBJ文件"));
 		return;
 	}
-	
 
-
-	_glConstructIndexFromName(glCancas->pModel);
+	_glConstructIndexFromName(glCanvas->pModel);
 	//绑定textture
-	glCancas->BindTexture(glCancas->pModel);
-	glCancas->scale = _glUnitize(glCancas->pModel, glCancas->pModel->center);
-	_glFacetNormals(glCancas->pModel);
-
+	//glCanvas->BindTexture();
+	
+	glCanvas->scale = _glUnitize(glCanvas->pModel, glCanvas->pModel->center);
+	_glFacetNormals(glCanvas->pModel);
 
 	// Init the modelview matrix as an identity matrix
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glGetDoublev(GL_MODELVIEW_MATRIX, glCancas->pModelViewMatrix);
+	glGetDoublev(GL_MODELVIEW_MATRIX, glCanvas->pModelViewMatrix);
 	
-	glCancas->setFocus();
-	glCancas->update();
+	glCanvas->setFocus();
+	glCanvas->update();
 }
 
-
+void GLMainWindow::StartTexture()
+{
+	if (!glCanvas->pModel)
+		return;
+	if (this->textureRenderAction->isChecked())
+	{
+		glCanvas->redrawMode = _GL_FLAT | _GL_TEXTURE;
+	}
+	else
+	{
+		glCanvas->redrawMode = _GL_FLAT;
+	}
+	glCanvas->update();
+}
 
 
 

@@ -6,6 +6,7 @@
 #include <glcanvas.h>
 #include <_glmodel.h>
 #include <gleasymath.h>
+#include<_glBackgroundThread.h>
 
 class GLMainWindow :public QMainWindow
 {
@@ -14,26 +15,30 @@ public:
 	GLMainWindow();
 	~GLMainWindow();
 
-public:
+public://action对应方法
 	void OpenOBJFile();//打开obj路径文件
 	void RestoreView();
 	void StartPickFace();
+	void StartTexture();
+public:
 	_GLModel* getObjModel();//获取当前的模型
+	void initialTextureThread();//初始化纹理线程
+		
+private:
+	void setTextureActionEnable(bool isEnable);
 
 private:
 
 	GLTOCDialog *gltocDialog;
-	GLCanvas *glCancas;
+	GLCanvas *glCanvas;
 
 	QAction *importObjAction;
 	QAction *restoreMatrixAction;
 	QAction *pickFaceAction;
+	QAction *textureRenderAction;
 
 	QMenu *fileMenu;
 	QToolBar *fileToolBar;
-
-	
-public:
 
 };
 #endif // !GL_MAINWINDOW_H

@@ -3,22 +3,29 @@
 /*定义后台线程*/
 #include<qthread.h>
 #include<_glmodel.h>
+#include<glcanvas.h>
 
 class _TextureThread :public QThread
 {
 	Q_OBJECT
-	void run() Q_DECL_OVERRIDE
+		void run() Q_DECL_OVERRIDE
 	{
 		bool isReady;
 		//开始执行绑定纹理
+		isReady = canvas->BindTexture();
 
 		emit loadReady(isReady);//发出信号
 	}
-signals:
+	signals:
 
 	void loadReady(const bool isEnable);
 
+public:
+	_TextureThread(GLCanvas* canvas){ 
+		this->canvas = canvas;
+	};
 
+	GLCanvas* canvas;//当前的模型对象
 };
 
 

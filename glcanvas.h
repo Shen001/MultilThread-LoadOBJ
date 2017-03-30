@@ -17,7 +17,7 @@ public:
 	GLCanvas(QWidget *parent = 0);
 	~GLCanvas();
 	void InitParameter();
-	void BindTexture(_GLModel* model);
+	bool BindTexture();
 	void ReviewInit();//恢复初始状态
 protected:
 	void mousePressEvent(QMouseEvent *e);
@@ -30,11 +30,11 @@ protected:
 	void initializeGL();
 	void resizeGL(int w, int h); //会自动刷新屏幕
 	void paintGL();
-
 	//变量
 public:
 	_GLModel* pModel;
 	bool isPickFace;//用来标示当前是否开始拾取面~
+	size_t redrawMode;//重绘的模式
 
 	double pModelViewMatrix[16];//模型视图
 	double pProjectMatrix[16];//投影视图
