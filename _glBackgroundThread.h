@@ -16,7 +16,6 @@ class _TextureThread :public QThread
 		isReady = canvas->BindTexture();
 
 		wglMakeCurrent(NULL, NULL);
-		//SwapBuffers(canvas->hDC);
 		emit loadReady(isReady);//·¢³öĞÅºÅ
 	}
 	signals:

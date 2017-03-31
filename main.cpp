@@ -1,7 +1,8 @@
 #include "glmainwindow.h"
 #include <QApplication>
 #include <glapplication.h>
-//#include <glcanvas.h>
+#include<qobject.h>
+
 int main(int argc, char *argv[])
 {
 	GlApplication app(argc, argv);
@@ -13,8 +14,10 @@ int main(int argc, char *argv[])
 	QCoreApplication::setApplicationName(GlApplication::AppName() + "_" + GlApplication::AppVersion());
 
 	GLMainWindow window;
+	
 	window.setWindowTitle(GlApplication::AppName() + "_" + GlApplication::AppVersion());
 	window.showMaximized();
+	QObject::connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));//πÿ±’”¶”√
 
 	return app.exec();
 }

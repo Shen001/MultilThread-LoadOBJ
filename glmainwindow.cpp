@@ -27,7 +27,7 @@ GLMainWindow::GLMainWindow()
 	connect(restoreMatrixAction, &QAction::triggered, this, &GLMainWindow::RestoreView);
 
 	//拾取面
-	pickFaceAction = new QAction(QString::fromLocal8Bit("拾取面"),this);
+	pickFaceAction = new QAction(QString::fromLocal8Bit("拾取面"), this);
 	connect(pickFaceAction, &QAction::triggered, this, &GLMainWindow::StartPickFace);
 	pickFaceAction->setCheckable(true);
 	pickFaceAction->setChecked(false);
@@ -61,17 +61,18 @@ void GLMainWindow::setTextureActionEnable(bool isEnable)
 //初始化纹理的线程
 void GLMainWindow::initialTextureThread()
 {
-
-	_TextureThread* textureThread = new _TextureThread(glCanvas);
+	textureThread = new _TextureThread(glCanvas);
 	connect(textureThread, &_TextureThread::loadReady, this, &GLMainWindow::setTextureActionEnable);
 	connect(textureThread, &_TextureThread::finished, textureThread, &QObject::deleteLater);
-	textureThread->start();
-
 }
 
 GLMainWindow::~GLMainWindow()
 {
-
+	//if (textureThread)//研究如何正确有效的释放new出来的对象
+	//	delete &textureThread;
+	wglMakeCurrent(NULL, NULL);
+	wglDeleteContext(glCanvas->hRC);
+	wglDeleteContext(glCanvas->hRCShareing);
 }
 
 void GLMainWindow::RestoreView()
@@ -111,19 +112,14 @@ void GLMainWindow::OpenOBJFile()
 		qDebug(T_Char2Char("无法打开OBJ文件"));
 		return;
 	}
-	//glCanvas->InitHDC();
-	//glCanvas->hDC = wglGetCurrentDC();
-	//glCanvas->hRC = wglCreateContext(glCanvas->hDC);
-	//glCanvas->hRCShareing = wglCreateContext(glCanvas->hDC);
-	//wglShareLists(glCanvas->hRCShareing, glCanvas->hRC);//第一个rc是分享别人资源，第二个是
-	//wglMakeCurrent(glCanvas->hDC, glCanvas->hRC);
-	//initialTextureThread();
-	glCanvas->BindTexture();
+	glCanvas->InitHDC();
+	initialTextureThread();
+	wglMakeCurrent(glCanvas->hDC, glCanvas->hRC);
+	textureThread->start();
 	_glConstructIndexFromName(glCanvas->pModel);
 	//绑定textture
 	_glFacetNormals(glCanvas->pModel);
 	glCanvas->scale = _glUnitize(glCanvas->pModel, glCanvas->pModel->center);
-
 
 	// Init the modelview matrix as an identity matrix
 	glMatrixMode(GL_MODELVIEW);
@@ -149,7 +145,20 @@ void GLMainWindow::StartTexture()
 	glCanvas->update();
 }
 
+void GLMainWindow::closeEvent(QCloseEvent* event)
+{
+	//以后还要确定贴图后的保存操作
+	//伪代码：
+	//if(需要保存，显示提示信息)
+	/*
+		IF(true)
+		save()
+		ELSE
+		quit()
+		*/
 
+	event->accept();
+}
 
 
 

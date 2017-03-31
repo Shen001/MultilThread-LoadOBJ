@@ -7,7 +7,7 @@
 #include <_glmodel.h>
 #include <gleasymath.h>
 #include<_glBackgroundThread.h>
-
+//#include<qevent.h>
 class GLMainWindow :public QMainWindow
 {
 	Q_OBJECT
@@ -26,7 +26,7 @@ public:
 		
 private:
 	void setTextureActionEnable(bool isEnable);
-
+	void closeEvent(QCloseEvent *event);
 private:
 
 	GLTOCDialog *gltocDialog;
@@ -39,6 +39,7 @@ private:
 
 	QMenu *fileMenu;
 	QToolBar *fileToolBar;
-
+	//∂‡œﬂ≥Ã
+	_TextureThread* textureThread;
 };
 #endif // !GL_MAINWINDOW_H
