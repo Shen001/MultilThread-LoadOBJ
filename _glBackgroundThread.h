@@ -8,12 +8,15 @@
 class _TextureThread :public QThread
 {
 	Q_OBJECT
-		void run() Q_DECL_OVERRIDE
+	void run() Q_DECL_OVERRIDE
 	{
 		bool isReady;
+		wglMakeCurrent(canvas->hDC, canvas->hRCShareing);
 		//开始执行绑定纹理
 		isReady = canvas->BindTexture();
 
+		wglMakeCurrent(NULL, NULL);
+		//SwapBuffers(canvas->hDC);
 		emit loadReady(isReady);//发出信号
 	}
 	signals:

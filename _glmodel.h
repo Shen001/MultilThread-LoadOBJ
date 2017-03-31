@@ -111,7 +111,7 @@ public:
 	QList<QString> list_ImagePath;//贴图路径集合,全路径
 
 	int textureArray[MAX_TEXTURE];//注册纹理数组
-	std::vector<unsigned int> textVector;
+	//std::vector<unsigned int> textVector;
 
 	float center[3];
 	size_t currentSelectedFace;//当前选中面的索引

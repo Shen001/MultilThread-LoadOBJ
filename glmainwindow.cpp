@@ -54,15 +54,19 @@ GLMainWindow::GLMainWindow()
 void GLMainWindow::setTextureActionEnable(bool isEnable)
 {
 	this->textureRenderAction->setEnabled(isEnable);
+	this->textureRenderAction->setChecked(true);
+	glCanvas->update();
 }
 
 //初始化纹理的线程
 void GLMainWindow::initialTextureThread()
 {
+
 	_TextureThread* textureThread = new _TextureThread(glCanvas);
 	connect(textureThread, &_TextureThread::loadReady, this, &GLMainWindow::setTextureActionEnable);
 	connect(textureThread, &_TextureThread::finished, textureThread, &QObject::deleteLater);
 	textureThread->start();
+
 }
 
 GLMainWindow::~GLMainWindow()
@@ -107,19 +111,25 @@ void GLMainWindow::OpenOBJFile()
 		qDebug(T_Char2Char("无法打开OBJ文件"));
 		return;
 	}
-
+	//glCanvas->InitHDC();
+	//glCanvas->hDC = wglGetCurrentDC();
+	//glCanvas->hRC = wglCreateContext(glCanvas->hDC);
+	//glCanvas->hRCShareing = wglCreateContext(glCanvas->hDC);
+	//wglShareLists(glCanvas->hRCShareing, glCanvas->hRC);//第一个rc是分享别人资源，第二个是
+	//wglMakeCurrent(glCanvas->hDC, glCanvas->hRC);
+	//initialTextureThread();
+	glCanvas->BindTexture();
 	_glConstructIndexFromName(glCanvas->pModel);
 	//绑定textture
-	//glCanvas->BindTexture();
-	
-	glCanvas->scale = _glUnitize(glCanvas->pModel, glCanvas->pModel->center);
 	_glFacetNormals(glCanvas->pModel);
+	glCanvas->scale = _glUnitize(glCanvas->pModel, glCanvas->pModel->center);
+
 
 	// Init the modelview matrix as an identity matrix
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glGetDoublev(GL_MODELVIEW_MATRIX, glCanvas->pModelViewMatrix);
-	
+
 	glCanvas->setFocus();
 	glCanvas->update();
 }

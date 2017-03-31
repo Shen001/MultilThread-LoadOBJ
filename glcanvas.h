@@ -3,11 +3,14 @@
 
 #include<qopenglwidget.h>
 #include<QtOpenGL\qgl.h>
-#include<qopenglfunctions.h>
 #include<QKeyEvent>
+#include<process.h>
+
+
 #include<gltrackball.h>
 #include<_glmodel.h>
 #include<glpick.h>
+
 
 class GLMainWindow;
 class GLCanvas :public QGLWidget//public QOpenGLWidget
@@ -19,6 +22,7 @@ public:
 	void InitParameter();
 	bool BindTexture();
 	void ReviewInit();//恢复初始状态
+	void InitHDC();
 protected:
 	void mousePressEvent(QMouseEvent *e);
 	void mouseReleaseEvent(QMouseEvent *e);
@@ -50,6 +54,10 @@ private:
 
 public:
 	float scale;
+
+	_WINDEF_::HDC	hDC;  // Private GDI Device Context
+	HGLRC  hRC;  // Permanent Rendering Context
+	HGLRC  hRCShareing;// 用于分享hRC的资源
 
 };
 

@@ -27,6 +27,10 @@ void GLCanvas::InitParameter()
 	oldY = 0;
 	isPickFace = false;
 	redrawMode = _GL_FLAT|_GL_TEXTURE;
+	hDC = NULL;
+	hRC = NULL;
+	hRCShareing = NULL;
+	
 }
 
 void GLCanvas::initializeGL()
@@ -85,7 +89,6 @@ void GLCanvas::paintGL()
 	if (pModel)
 	{
 		_glDraw(pModel, this->redrawMode);
-
 
 		//_glDraw(pModel, _GL_FLAT);
 		//_glDraw(pModel, _GL_SMOOTH | _GL_TEXTURE);
@@ -408,7 +411,6 @@ bool GLCanvas::BindTexture()
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 		glDisable(GL_TEXTURE_2D);
-		//glFlush();
 	}
 	return true;
 }
@@ -422,4 +424,13 @@ void GLCanvas::ReviewInit()
 	glScaled(1.05, 1.05, 1.05);//为何有还原视图的效果
 	glGetDoublev(GL_MODELVIEW_MATRIX, pModelViewMatrix);
 	update();
+}
+
+void GLCanvas::InitHDC()
+{
+	hDC = wglGetCurrentDC();
+	hRC = wglCreateContext(hDC);
+	hRCShareing = wglCreateContext(hDC);
+
+	wglShareLists(hRCShareing, hRC);//第一个rc是分享别人资源，第二个是共线资源给别人分享
 }

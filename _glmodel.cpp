@@ -57,7 +57,7 @@ void _glReadMTL(_GLModel *model, QString fileName)
 
 			QString str1 = list[1];
 			material->materialName = str1.trimmed();
-			material->index_Material = index+1;
+			material->index_Material = ++index;
 			model->num_Materials++;
 		}
 		else if (str[0] == 'm')//ÌùÍ¼Â·¾¶
@@ -254,7 +254,7 @@ float _glUnitize(_GLModel* model, float* center)
 	float cx, cy, cz, w, h, d;
 	float scale;
 	
-	if (model&&model->list_Origin_Vertics.size() > 0)
+	if (model&&model->list_Vertices.size() > 0)
 	{
 		maxx = minx = model->list_Vertices.at(0)._X;
 		maxy = miny = model->list_Vertices.at(0)._Y;
@@ -328,7 +328,7 @@ void _glConstructIndexFromName(_GLModel* model)
 	{
 		QString name = model->list_Faces.at(i).materialName;
 		index = GetIndexFromMaterialName(model, name);
-		if (index > 0)
+		if (index >= 0)
 			model->list_Faces[i].index_Text = index;
 	}
 }
