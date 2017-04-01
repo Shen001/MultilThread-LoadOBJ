@@ -363,6 +363,11 @@ void _glDraw(_GLModel* model, size_t mode)
 			if (f.index_Text > -1)//绘制指定的纹理一定要将对应的纹理先启动绑定
 				glBindTexture(GL_TEXTURE_2D, model->textureArray[f.index_Text]);
 		}
+		else
+		{
+			glEnable(GL_TEXTURE_2D);
+			glBindTexture(GL_TEXTURE_2D, model->textureArray_Fake[f.index_Text]);
+		}
 		if (f.isS)
 			glColor3f(1.0f, 132.0/255.0, 132.0/255.0); // 颜色设置为红色  
 		else glColor3f(1.0f, 1.0f, 1.0f);

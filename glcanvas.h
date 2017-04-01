@@ -59,6 +59,11 @@ public:
 	HGLRC  hRC;  // Permanent Rendering Context
 	HGLRC  hRCShareing;// 用于分享hRC的资源
 
+signals:
+	void SendInfo(QString&);//发送显示信息的信号
+
+private :
+	void sendInfo(Face *f);
 };
 
 #endif // GLCANVAS_H

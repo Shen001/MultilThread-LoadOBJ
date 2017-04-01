@@ -51,13 +51,13 @@ void GLCanvas::initializeGL()
 	glEnable(GL_LIGHTING);
 	glEnable(GL_NORMALIZE);
 
-	//glEnable(GL_BLEND);
+	glEnable(GL_BLEND);
 	glEnable(GL_LINE_SMOOTH);//启用发走样之后可以设置小数线宽
 
 	glEnable(GL_POLYGON_OFFSET_FILL);
 	glPolygonOffset(1.0f, 0.0f);
 	//
-	glShadeModel(GL_SMOOTH);//颜色模式
+	glShadeModel(GL_FLAT);//颜色模式，flat使用计算法向量，smooth使用自带法向量
 
 	// Setup lighting model.//光照模型
 	//GLfloat light_model_ambient[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -233,6 +233,7 @@ void GLCanvas::mousePressEvent(QMouseEvent *e)
 				{
 					pModel->list_Faces[nearHit - 1].isS = true;
 					pModel->currentSelectedFace = nearHit - 1;
+					sendInfo(&pModel->list_Faces[nearHit - 1]);
 				}
 			}
 			else
@@ -369,8 +370,6 @@ void GLCanvas::wheelEvent(QWheelEvent *e)
 	update();
 }
 
-//GLMmodel* GLCanvas::getModel(){ return this->pModel; }
-
 bool GLCanvas::BindTexture()
 {
 	if (this->pModel->list_ImagePath.length() == 0)
@@ -398,16 +397,16 @@ bool GLCanvas::BindTexture()
 		imgScaled = img.scaled(bestW, bestH, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 		imgGL = convertToGLFormat(imgScaled);//该方法是QGLWidget插件独有的方法，所以该方法是在你的QGLWidget中实现的
 
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);//对齐像素字节函数
 
-		//model->textVector.push_back(0);
+		//pModel->textureArray_Fake;
 		glGenTextures(1, (GLuint*)&(this->pModel->textureArray[i]));//创建
 		glBindTexture(GL_TEXTURE_2D, (GLuint)this->pModel->textureArray[i]);//绑定
-		glTexImage2D(GL_TEXTURE_2D, 0, 3, imgGL.width(), imgGL.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, imgGL.bits());
+		//glTexImage2D(GL_TEXTURE_2D, 0, 3, imgGL.width(), imgGL.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, imgGL.bits());
 		gluBuild2DMipmaps(GL_TEXTURE_2D, 3, imgGL.width(), imgGL.height(), GL_RGBA, GL_UNSIGNED_BYTE, imgGL.bits());
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		
 		glDisable(GL_TEXTURE_2D);
@@ -425,12 +424,32 @@ void GLCanvas::ReviewInit()
 	glGetDoublev(GL_MODELVIEW_MATRIX, pModelViewMatrix);
 	update();
 }
-
+//初始化多线程句柄
 void GLCanvas::InitHDC()
 {
 	hDC = wglGetCurrentDC();
+	//hRC = wglGetCurrentDC();
 	hRC = wglGetCurrentContext();
 	hRCShareing = wglCreateContext(hDC);
 
 	wglShareLists(hRCShareing, hRC);//第一个rc是分享别人资源，第二个是共线资源给别人分享
+}
+
+void GLCanvas::sendInfo(Face *f)
+{
+	emit SendInfo(QString("index of selected face: %1\n").arg(pModel->currentSelectedFace));
+
+	QString str;
+	for (int i = 0; i < f->list_index_Points.size(); i++)
+	{
+		float x = pModel->list_Vertices[f->list_index_Points[i]]._X;
+		float y = pModel->list_Vertices[f->list_index_Points[i]]._Y;
+		float z = pModel->list_Vertices[f->list_index_Points[i]]._Z;
+
+		str.append(QString("X:%1 \n").arg(x));
+		str.append(QString("Y:%1 \n").arg(y));
+		str.append(QString("Z:%1 \n").arg(z));
+		str.append("\n");
+	}
+	emit SendInfo(str);
 }

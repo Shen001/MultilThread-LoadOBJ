@@ -111,6 +111,7 @@ public:
 	QList<QString> list_ImagePath;//贴图路径集合,全路径
 
 	int textureArray[MAX_TEXTURE];//注册纹理数组
+	int textureArray_Fake[MAX_TEXTURE];//取消注册纹理数组
 	//std::vector<unsigned int> textVector;
 
 	float center[3];

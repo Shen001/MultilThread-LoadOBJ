@@ -18,6 +18,7 @@ GLMainWindow::GLMainWindow()
 	setCentralWidget(glCanvas);
 
 	//importObjAction = new QAction(QIcon(":/images/import_mesh.png"), tr("&Open OBJ"), this);//需要引用Qt5Gui.lib或者Qt5Guid.lib
+
 	importObjAction = new QAction(QString::fromLocal8Bit("打开OBJ"), this);
 	importObjAction->setShortcutContext(Qt::ApplicationShortcut);
 	importObjAction->setShortcut(Qt::CTRL + Qt::Key_O);
@@ -49,7 +50,15 @@ GLMainWindow::GLMainWindow()
 	fileToolBar->addAction(pickFaceAction);
 	fileToolBar->addAction(textureRenderAction);
 
+
+	connect(glCanvas, SIGNAL(SendInfo(QString&)), this, SLOT(ShowInfo(QString&)));//绑定显示信号的槽
 }
+
+void GLMainWindow::ShowInfo(QString& info)
+{
+	this->gltocDialog->ShowCurrentRebackInfo(info);
+}
+
 
 void GLMainWindow::setTextureActionEnable(bool isEnable)
 {

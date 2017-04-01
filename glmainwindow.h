@@ -41,5 +41,8 @@ private:
 	QToolBar *fileToolBar;
 	//多线程
 	_TextureThread* textureThread;
+
+	public slots:
+	void ShowInfo(QString&);//接收信号的槽
 };
 #endif // !GL_MAINWINDOW_H
