@@ -108,7 +108,7 @@ void GLMainWindow::OpenOBJFile()
 
 	if (fileName.isNull())
 		return;
-
+	updateMenus(true);
 	if (glCanvas->pModel)
 	{
 		_glDelete(glCanvas->pModel);
@@ -121,6 +121,8 @@ void GLMainWindow::OpenOBJFile()
 		qDebug(T_Char2Char("无法打开OBJ文件"));
 		return;
 	}
+
+	_glReconstructFaceIndexes(glCanvas->pModel);
 	glCanvas->InitHDC();
 	initialTextureThread();
 	wglMakeCurrent(glCanvas->hDC, glCanvas->hRC);
@@ -168,7 +170,14 @@ void GLMainWindow::closeEvent(QCloseEvent* event)
 
 	event->accept();
 }
-
-
+//刷新菜单栏
+void GLMainWindow::updateMenus(bool ifLoadNewOBJ)
+{
+	pickFaceAction->setChecked(false);
+	glCanvas->isPickFace = false;
+	if (ifLoadNewOBJ)
+		textureRenderAction->setEnabled(false);
+	textureRenderAction->setChecked(false);
+}
 
 

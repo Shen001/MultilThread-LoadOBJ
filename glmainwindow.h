@@ -27,8 +27,9 @@ public:
 private:
 	void setTextureActionEnable(bool isEnable);
 	void closeEvent(QCloseEvent *event);
-private:
+	void updateMenus(bool ifLoadNewOBJ);//¸üÐÂ²Ëµ¥×´Ì¬
 
+private:
 	GLTOCDialog *gltocDialog;
 	GLCanvas *glCanvas;
 

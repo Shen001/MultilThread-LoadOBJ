@@ -101,6 +101,33 @@ void _glReadMTL(_GLModel *model, QString fileName)
 
 #pragma endregion
 
+void _glReconstructFaceIndexes(_GLModel* model)
+{
+	for (size_t i = 0; i < model->num_Faces; i++)
+	{
+		Face* f = model->list_Faces[i];
+		for (int j = 0; j < f->list_index_Points.length(); j++)
+		{
+			int currentIndex = f->list_index_Points[j];
+			if (currentIndex > 0)
+			{
+				f->list_index_Points[j] -= 1;
+				if (f->list_index_TextCoords.size()>j)
+					f->list_index_TextCoords[j] -= 1;
+				if (f->list_index_VertNormals.size() > j)
+					f->list_index_VertNormals[j] -= 1;
+			}
+			else
+			{
+				f->list_index_Points[j] += model->list_Vertices.size();
+				if (f->list_index_TextCoords.size() > j)
+					f->list_index_TextCoords[j] += model->list_Textcoords.size();
+				if (f->list_index_VertNormals.size() > j)
+					f->list_index_VertNormals[j] += model->list_Normals.size();
+			}
+		}
+	}
+}
 //读取OBJ文件
 _GLModel* _glReadOBJ(QString filename)
 {
@@ -112,7 +139,7 @@ _GLModel* _glReadOBJ(QString filename)
 
 	_GLModel* model;
 	model = new _GLModel();
-	QString split = ' ';
+	QString split_space = ' ';
 
 	model->path = filename;
 	model->num_Faces = 0;
@@ -137,7 +164,7 @@ _GLModel* _glReadOBJ(QString filename)
 			QStringList str0 = str.split(' ');
 			QString mtlname = str0[1];
 			mtlname = mtlname.trimmed();
-			if (mtlname[0] == '.'&&mtlname[1] == '/')
+			if (mtlname[0] == '.'&&mtlname[1] == '/')//linux只的本地目录树
 				mtlname = mtlname.right(mtlname.length() - 2);
 			dirPath.append(mtlname);
 			model->mtllibName = dirPath;
@@ -145,24 +172,27 @@ _GLModel* _glReadOBJ(QString filename)
 		}
 		else if (str[0] == 'v'){
 			if (str[1] == 't'){//纹理
-				list = str.split(split);//无论是否包括Z方向的纹理都先取前两个值
+				str = str.remove(0, 2).trimmed();//去掉vt
+				list = str.split(split_space);//无论是否包括Z方向的纹理都先取前两个值
 				vt = new TextCoords();
-				vt->U = list[_Y].toFloat(); vt->V = list[_Z].toFloat();
+				vt->U = list[_X].toFloat(); vt->V = list[_Y].toFloat();
 				model->num_Textcoords++;
 				model->list_Textcoords.push_back(vt);
 			}
 			else if (str[1] == 'n'){//法向量
-				list = str.split(split);
+				str = str.remove(0, 2).trimmed();//去掉vt
+				list = str.split(split_space);
 				vn = new VertNormals();
-				vn->_NX = list[_Y].toFloat(); vn->_NY = list[_Z].toFloat(); vn->_NZ = list[_W].toFloat();
+				vn->_NX = list[_X].toFloat(); vn->_NY = list[_Y].toFloat(); vn->_NZ = list[_Z].toFloat();
 				model->num_Normals++;
 				model->list_Normals.push_back(vn);
 			}
 			else//节点~
 			{
-				list = str.split(split);
+				str = str.remove(0, 1).trimmed();
+				list = str.split(split_space);
 				v = new Point3();
-				v->_X = list[_Y].toFloat(); v->_Y = list[_Z].toFloat(); v->_Z = list[_W].toFloat();
+				v->_X = list[_X].toFloat(); v->_Y = list[_Y].toFloat(); v->_Z = list[_Z].toFloat();
 				model->num_Vertices++;
 				model->list_Origin_Vertics.push_back(v);
 				model->list_Vertices.push_back(v);
@@ -170,13 +200,13 @@ _GLModel* _glReadOBJ(QString filename)
 		}
 		else if (str[0] == 'u')//材质的名称
 		{
-			list = str.split(split);
+			list = str.split(split_space);
 			currentMaterialName = list[1].trimmed();
 		}
 		else if (str[0] == 'f')//面
 		{
 			str = str.trimmed();
-			list = str.split(split);
+			list = str.split(split_space);
 
 			f = new Face();
 			f->materialName = currentMaterialName;
@@ -185,27 +215,16 @@ _GLModel* _glReadOBJ(QString filename)
 			int currentValue;
 			if (list[1].contains('/'))
 			{
-
 				for (int i = 1; i < list.length(); i++)
 				{
 					QStringList sublist = list[i].split('/');
 					currentValue = sublist[_X].toInt();
-					if (currentValue > 0){//要么全为正，要么全为负数咯
-						f->list_index_Points.push_back(currentValue - 1);
-						f->list_index_TextCoords.push_back(sublist[_Y].toInt() - 1);
-						if (list[1].split('/').length() == 3)//只有v和vt
-						{
-							f->list_index_VertNormals.push_back(sublist[_Z].toInt() - 1);
-						}
-					}
-					else//如果为负值
+					//要么全为正，要么全为负数咯
+					f->list_index_Points.push_back(currentValue);
+					f->list_index_TextCoords.push_back(sublist[_Y].toInt());
+					if (list[1].split('/').length() == 3)//只有v和vt
 					{
-						f->list_index_Points.push_back(model->list_Vertices.length() + currentValue);
-						f->list_index_TextCoords.push_back(model->list_Textcoords.length() + sublist[_Y].toInt());
-						if (list[1].split('/').length() == 3)
-						{
-							f->list_index_VertNormals.push_back(model->list_Normals.length()+sublist[_Z].toInt());
-						}
+						f->list_index_VertNormals.push_back(sublist[_Z].toInt());
 					}
 				}
 			}
@@ -214,10 +233,7 @@ _GLModel* _glReadOBJ(QString filename)
 				for (int i = 1; i < list.length(); i++)
 				{
 					currentValue = list[i].toInt();
-					if (currentValue > 0)
-						f->list_index_Points.push_back(currentValue - 1);
-					else
-						f->list_index_Points.push_back(model->list_Vertices.length() + currentValue);
+					f->list_index_Points.push_back(currentValue - 1);
 				}
 			}
 			model->num_Faces++;

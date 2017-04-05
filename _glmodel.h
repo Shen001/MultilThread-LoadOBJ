@@ -145,6 +145,8 @@ size_t _glWeld(_GLModel* model, size_t mode);
 //
 void _glConstructIndexFromName(_GLModel* model);
 
+//初始化完了模型，重新设置面的节点，纹理，法向量的索引
+void  _glReconstructFaceIndexes(_GLModel* model);
 
 
 
