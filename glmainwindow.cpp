@@ -98,15 +98,15 @@ void GLMainWindow::StartPickFace()
 	else
 	{
 		glCanvas->isPickFace = false;
+		glCanvas->ClearSelection();
+		glCanvas->updateGL();
 	}
 }
 
 void GLMainWindow::OpenOBJFile()
 {
-	//QString str("F:\\code\\cPP\doc\\三维数据\\obj文件");
 	QFileInfo fileInfo(QString::fromLocal8Bit("F:\\code\\cPP\\doc\\三维数据\\obj文件\\"));
-	QString strPath = fileInfo.absolutePath();
-	QString fileName = QFileDialog::getOpenFileName(this, QString::fromLocal8Bit("打开OBJ"), strPath , "OBJ Files (*.obj)");
+	QString fileName = QFileDialog::getOpenFileName(this, QString::fromLocal8Bit("打开OBJ"), fileInfo.absolutePath(), "OBJ Files (*.obj)");
 	//如果已经存在了，那么先删除该模型
 
 	if (fileName.isNull())

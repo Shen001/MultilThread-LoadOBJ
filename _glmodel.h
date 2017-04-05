@@ -108,7 +108,7 @@ public:
 	QList<FacetNormal*> list_FaceNormal;//面向量集合
 
 	int textureArray[MAX_TEXTURE];//注册纹理数组
-	int textureArray_Fake[MAX_TEXTURE];//空注册纹理数组
+	int textureArray_Fake[1];//空注册纹理数组
 
 	float center[3];
 	size_t currentSelectedFace;//当前选中面的索引

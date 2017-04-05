@@ -109,13 +109,13 @@ void GLCanvas::resizeGL(int w, int h)
 }
 
 //清除选择集
-void ClearSelect(_GLModel* model)
+void GLCanvas::ClearSelection()
 {
-	if (model)
+	if (pModel)
 	{
-		for (size_t i = 0; i < model->num_Faces; i++)
+		for (size_t i = 0; i < pModel->num_Faces; i++)
 		{
-			model->list_Faces[i]->isS = false;
+			pModel->list_Faces[i]->isS = false;
 		}
 	}
 }
@@ -128,7 +128,7 @@ void GLCanvas::mousePressEvent(QMouseEvent *e)
 		{
 			if (isPickFace)//拾取面操作
 			{
-				ClearSelect(pModel);//先清除选择集
+				ClearSelection();//先清除选择集
 				int x = e->x();
 				int y = e->y();
 

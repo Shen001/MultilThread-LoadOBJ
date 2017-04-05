@@ -23,6 +23,7 @@ public:
 	bool BindTexture();
 	void ReviewInit();//»Ö¸´³õÊ¼×´Ì¬
 	void InitHDC();
+	void ClearSelection();
 protected:
 	void mousePressEvent(QMouseEvent *e);
 	void mouseReleaseEvent(QMouseEvent *e);

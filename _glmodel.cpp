@@ -233,7 +233,7 @@ _GLModel* _glReadOBJ(QString filename)
 				for (int i = 1; i < list.length(); i++)
 				{
 					currentValue = list[i].toInt();
-					f->list_index_Points.push_back(currentValue - 1);
+					f->list_index_Points.push_back(currentValue);
 				}
 			}
 			model->num_Faces++;
@@ -410,7 +410,7 @@ void _glDraw(_GLModel* model, size_t mode)
 		else
 		{
 			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D, model->textureArray_Fake[f->index_Text]);
+			glBindTexture(GL_TEXTURE_2D, model->textureArray_Fake[0]);
 		}
 		if (f->isS)
 			glColor3f(1.0f, 132.0 / 255.0, 132.0 / 255.0); // 颜色设置为红色  
