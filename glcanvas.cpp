@@ -115,7 +115,7 @@ void ClearSelect(_GLModel* model)
 	{
 		for (size_t i = 0; i < model->num_Faces; i++)
 		{
-			model->list_Faces[i].isS = false;
+			model->list_Faces[i]->isS = false;
 		}
 	}
 }
@@ -231,9 +231,9 @@ void GLCanvas::mousePressEvent(QMouseEvent *e)
 				}
 				if (nearHit > 0)
 				{
-					pModel->list_Faces[nearHit - 1].isS = true;
+					pModel->list_Faces[nearHit - 1]->isS = true;
 					pModel->currentSelectedFace = nearHit - 1;
-					sendInfo(&pModel->list_Faces[nearHit - 1]);
+					sendInfo(pModel->list_Faces[nearHit - 1]);
 				}
 			}
 			else
@@ -370,18 +370,21 @@ void GLCanvas::wheelEvent(QWheelEvent *e)
 	update();
 }
 
+//绑定纹理
 bool GLCanvas::BindTexture()
 {
-	if (this->pModel->list_ImagePath.length() == 0)
+	if (this->pModel->num_Materials == 0)
 		return false;
-	for (int i = 0; i < this->pModel->list_ImagePath.length(); i++)
+	for (int i = 0; i < this->pModel->list_Materials.length(); i++)
 	{
+		if (this->pModel->list_Materials[i]->imagePath.isNull())
+			continue;//如果是默认材质，没有纹理信息
 		glEnable(GL_TEXTURE_2D);
 		GLint MaxTextureSize;
 		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &MaxTextureSize);
 
 		QImage img, imgScaled, imgGL;
-		QFileInfo fi(this->pModel->list_ImagePath[i]);
+		QFileInfo fi(this->pModel->list_Materials[i]->imagePath);
 		QString imagePath = fi.absoluteFilePath();
 		imagePath = imagePath.trimmed();
 		bool res = img.load(imagePath);
@@ -399,7 +402,9 @@ bool GLCanvas::BindTexture()
 
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);//对齐像素字节函数
 
-		//pModel->textureArray_Fake;
+		//pModel->textureArray.push_back(0);
+		//pModel->textureArray_Fake.push_back(0);
+		//int text = pModel->textureArray.back();
 		glGenTextures(1, (GLuint*)&(this->pModel->textureArray[i]));//创建
 		glBindTexture(GL_TEXTURE_2D, (GLuint)this->pModel->textureArray[i]);//绑定
 		//glTexImage2D(GL_TEXTURE_2D, 0, 3, imgGL.width(), imgGL.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, imgGL.bits());
@@ -413,6 +418,7 @@ bool GLCanvas::BindTexture()
 	}
 	return true;
 }
+
 //恢复初始视图
 void GLCanvas::ReviewInit()
 {
@@ -424,6 +430,7 @@ void GLCanvas::ReviewInit()
 	glGetDoublev(GL_MODELVIEW_MATRIX, pModelViewMatrix);
 	update();
 }
+
 //初始化多线程句柄
 void GLCanvas::InitHDC()
 {
@@ -435,6 +442,7 @@ void GLCanvas::InitHDC()
 	wglShareLists(hRCShareing, hRC);//第一个rc是分享别人资源，第二个是共线资源给别人分享
 }
 
+//发送信号
 void GLCanvas::sendInfo(Face *f)
 {
 	emit SendInfo(QString("index of selected face: %1\n").arg(pModel->currentSelectedFace));
@@ -442,9 +450,9 @@ void GLCanvas::sendInfo(Face *f)
 	QString str;
 	for (int i = 0; i < f->list_index_Points.size(); i++)
 	{
-		float x = pModel->list_Vertices[f->list_index_Points[i]]._X;
-		float y = pModel->list_Vertices[f->list_index_Points[i]]._Y;
-		float z = pModel->list_Vertices[f->list_index_Points[i]]._Z;
+		float x = pModel->list_Vertices[f->list_index_Points[i]]->_X;
+		float y = pModel->list_Vertices[f->list_index_Points[i]]->_Y;
+		float z = pModel->list_Vertices[f->list_index_Points[i]]->_Z;
 
 		str.append(QString("X:%1 \n").arg(x));
 		str.append(QString("Y:%1 \n").arg(y));

@@ -63,15 +63,15 @@ static Point3 Proj(QMatrix4x4 matrix, const float* viewport, const Point3 p)
 	return sc;
 }
 
-static QList<Point3> FillProjectedVetor(_GLModel* model, QMatrix4x4 matrix, const float* viewportF)
-{
-	QList<Point3> vecs;
-	for (size_t i = 0; i < model->num_Vertices; i++)
-	{
-		vecs.push_back(Proj(matrix, viewportF, model->list_Vertices[i]));
-	}
-	return vecs;
-}
+//static QList<Point3> FillProjectedVetor(_GLModel* model, QMatrix4x4 matrix, const float* viewportF)
+//{
+//	QList<Point3*> vecs;
+//	for (size_t i = 0; i < model->num_Vertices; i++)
+//	{
+//		vecs.push_back(Proj(matrix, viewportF, model->list_Vertices[i]));
+//	}
+//	return vecs;
+//}
 
 static BOOL PtInPolygon(float x, float y, Face ptPolygon, QList<Point3> list)
 {

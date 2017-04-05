@@ -8,8 +8,7 @@
 
 using namespace std;
 
-#define MAX_TEXTURE 256
-//static int TextureArray[MAX_TEXTURE] = { 0 };
+#define MAX_TEXTURE 1024 //--放弃
 
 //定义渲染模式
 #define _GL_NONE (0) //0
@@ -31,6 +30,7 @@ struct  Material
 	GLfloat _Ks[3];//specular
 
 	QString imageName;//图片的路径名称，此处应为完整路径
+	QString imagePath;//纹理路径
 };
 
 //节点
@@ -91,7 +91,6 @@ class _GLModel
 {
 public:
 
-
 	QString path;//obj文件路径
 	QString mtllibName;//材质文件名称
 	size_t num_Vertices;//节点个数
@@ -100,19 +99,16 @@ public:
 	size_t num_Materials;//材质个数
 	size_t num_Faces;//面的个数
 
-	QList<Point3> list_Origin_Vertics;//原始坐标的点集
-	QList<Point3> list_Vertices;//节点对象集合
-	QList<VertNormals> list_Normals;//节点向量集合
-	QList<TextCoords> list_Textcoords;//纹理坐标集合
-	QList<Face> list_Faces;//面集合
-	QList<Material> list_Materials;//材质集合
-	QList<FacetNormal> list_FaceNormal;//面向量集合
-
-	QList<QString> list_ImagePath;//贴图路径集合,全路径
+	QList<Point3*> list_Origin_Vertics;//原始坐标的点集
+	QList<Point3*> list_Vertices;//节点对象集合
+	QList<VertNormals*> list_Normals;//节点向量集合
+	QList<TextCoords*> list_Textcoords;//纹理坐标集合
+	QList<Face*> list_Faces;//面集合
+	QList<Material*> list_Materials;//材质集合
+	QList<FacetNormal*> list_FaceNormal;//面向量集合
 
 	int textureArray[MAX_TEXTURE];//注册纹理数组
-	int textureArray_Fake[MAX_TEXTURE];//取消注册纹理数组
-	//std::vector<unsigned int> textVector;
+	int textureArray_Fake[MAX_TEXTURE];//空注册纹理数组
 
 	float center[3];
 	size_t currentSelectedFace;//当前选中面的索引

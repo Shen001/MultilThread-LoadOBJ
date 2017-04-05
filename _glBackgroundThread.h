@@ -5,6 +5,7 @@
 #include<_glmodel.h>
 #include<glcanvas.h>
 
+//绑定纹理线程类
 class _TextureThread :public QThread
 {
 	Q_OBJECT

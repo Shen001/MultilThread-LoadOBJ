@@ -1,7 +1,7 @@
 #include "glmainwindow.h"
 #include <QApplication>
 #include <glapplication.h>
-#include<qobject.h>
+#include <qobject.h>
 
 int main(int argc, char *argv[])
 {

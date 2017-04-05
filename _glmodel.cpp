@@ -11,7 +11,7 @@ using namespace std;
 #define GL_PI 3.14159265358979323846
 #endif
 
-enum{ _X, _Y, _Z, _W };//
+enum{ _X, _Y, _Z, _W };//代表0，1，2，3
 
 #pragma region 私有方法
 //根据文件的路径获取到文件夹的路径
@@ -40,13 +40,14 @@ void _glReadMTL(_GLModel *model, QString fileName)
 	while (!file.atEnd())
 	{
 		QByteArray line = file.readLine();
-		if (line.length() == 2 && line.at(line.length() - 2) == '\r'&&line.at(line.length() - 1) == '\n')//如果读到了空行且材质指针不为空，那么证明当前的材质已经读完
-		{
-			if (material&&material->materialName != NULL)
-				model->list_Materials.push_back(*material);
-		}
+		//if (line.length() == 2 && line.at(line.length() - 2) == '\r'&&line.at(line.length() - 1) == '\n')//如果读到了空行且材质指针不为空，那么证明当前的材质已经读完
+		//{
+		//	if (material&&material->materialName != NULL)
+		//		model->list_Materials.push_back(material);
+		//}
 
 		QString str(line);
+		str = str.trimmed();
 		if (str[0] == 'n')//名称
 		{
 			list = str.split(split);
@@ -59,14 +60,18 @@ void _glReadMTL(_GLModel *model, QString fileName)
 			material->materialName = str1.trimmed();
 			material->index_Material = ++index;
 			model->num_Materials++;
+			model->list_Materials.push_back(material);
 		}
 		else if (str[0] == 'm')//贴图路径
 		{
 			list = str.split(split);
 			dirPath = _glGetDir(fileName);//获取文件夹路径
-			dirPath.append(list[1].trimmed());
-			material->imageName = dirPath;
-			model->list_ImagePath.push_back(dirPath);
+			if (list[0].toLower() == "map_kd"){//设置为只读取漫反射纹理，可以改进
+				material->imageName = list[1].trimmed();
+				dirPath.append(list[1].trimmed());
+				material->imagePath = dirPath;
+				//model->list_ImagePath.push_back(dirPath);
+			}
 		}
 		else if (str[0] == 'K')
 		{
@@ -91,6 +96,7 @@ void _glReadMTL(_GLModel *model, QString fileName)
 			}
 		}
 	}
+
 }
 
 #pragma endregion
@@ -131,6 +137,8 @@ _GLModel* _glReadOBJ(QString filename)
 			QStringList str0 = str.split(' ');
 			QString mtlname = str0[1];
 			mtlname = mtlname.trimmed();
+			if (mtlname[0] == '.'&&mtlname[1] == '/')
+				mtlname = mtlname.right(mtlname.length() - 2);
 			dirPath.append(mtlname);
 			model->mtllibName = dirPath;
 			_glReadMTL(model, model->mtllibName);
@@ -141,14 +149,14 @@ _GLModel* _glReadOBJ(QString filename)
 				vt = new TextCoords();
 				vt->U = list[_Y].toFloat(); vt->V = list[_Z].toFloat();
 				model->num_Textcoords++;
-				model->list_Textcoords.push_back(*vt);
+				model->list_Textcoords.push_back(vt);
 			}
 			else if (str[1] == 'n'){//法向量
 				list = str.split(split);
 				vn = new VertNormals();
 				vn->_NX = list[_Y].toFloat(); vn->_NY = list[_Z].toFloat(); vn->_NZ = list[_W].toFloat();
 				model->num_Normals++;
-				model->list_Normals.push_back(*vn);
+				model->list_Normals.push_back(vn);
 			}
 			else//节点~
 			{
@@ -156,8 +164,8 @@ _GLModel* _glReadOBJ(QString filename)
 				v = new Point3();
 				v->_X = list[_Y].toFloat(); v->_Y = list[_Z].toFloat(); v->_Z = list[_W].toFloat();
 				model->num_Vertices++;
-				model->list_Origin_Vertics.push_back(*v);
-				model->list_Vertices.push_back(*v);
+				model->list_Origin_Vertics.push_back(v);
+				model->list_Vertices.push_back(v);
 			}
 		}
 		else if (str[0] == 'u')//材质的名称
@@ -174,17 +182,30 @@ _GLModel* _glReadOBJ(QString filename)
 			f->materialName = currentMaterialName;
 			f->isS = false;
 
+			int currentValue;
 			if (list[1].contains('/'))
 			{
 
 				for (int i = 1; i < list.length(); i++)
 				{
 					QStringList sublist = list[i].split('/');
-					f->list_index_Points.push_back(sublist[_X].toInt() - 1);
-					f->list_index_TextCoords.push_back(sublist[_Y].toInt() - 1);
-					if (list[1].split('/').length() == 3)//只有v和vt
+					currentValue = sublist[_X].toInt();
+					if (currentValue > 0){//要么全为正，要么全为负数咯
+						f->list_index_Points.push_back(currentValue - 1);
+						f->list_index_TextCoords.push_back(sublist[_Y].toInt() - 1);
+						if (list[1].split('/').length() == 3)//只有v和vt
+						{
+							f->list_index_VertNormals.push_back(sublist[_Z].toInt() - 1);
+						}
+					}
+					else//如果为负值
 					{
-						f->list_index_VertNormals.push_back(sublist[_Z].toInt() - 1);
+						f->list_index_Points.push_back(model->list_Vertices.length() + currentValue);
+						f->list_index_TextCoords.push_back(model->list_Textcoords.length() + sublist[_Y].toInt());
+						if (list[1].split('/').length() == 3)
+						{
+							f->list_index_VertNormals.push_back(model->list_Normals.length()+sublist[_Z].toInt());
+						}
 					}
 				}
 			}
@@ -192,11 +213,15 @@ _GLModel* _glReadOBJ(QString filename)
 			{
 				for (int i = 1; i < list.length(); i++)
 				{
-					f->list_index_Points.push_back(list[i].toInt() - 1);
+					currentValue = list[i].toInt();
+					if (currentValue > 0)
+						f->list_index_Points.push_back(currentValue - 1);
+					else
+						f->list_index_Points.push_back(model->list_Vertices.length() + currentValue);
 				}
 			}
 			model->num_Faces++;
-			model->list_Faces.push_back(*f);
+			model->list_Faces.push_back(f);
 		}
 	}
 	return model;
@@ -205,9 +230,12 @@ _GLModel* _glReadOBJ(QString filename)
 //释放之前的model
 void _glDelete(_GLModel* model)
 {
-	if (model)
+	if (model){
+		glDeleteTextures(MAX_TEXTURE, (GLuint*)&(model->textureArray[0]));
+		memset(model->textureArray, 0, MAX_TEXTURE);
 		delete model;
-	//释放model中的集合对象？
+		//释放model中的集合对象？
+	}
 }
 
 //计算面的法向量
@@ -221,29 +249,29 @@ void _glFacetNormals(_GLModel* model)
 	for (int i = 0; i < model->list_Faces.length(); i++)
 	{
 		fn = new FacetNormal();
-		Point3 p0 = model->list_Vertices.at(model->list_Faces.at(i).list_index_Points[0]);
-		Point3 p1 = model->list_Vertices.at(model->list_Faces.at(i).list_index_Points[1]);
+		Point3 *p0 = model->list_Vertices.at(model->list_Faces.at(i)->list_index_Points[0]);
+		Point3 *p1 = model->list_Vertices.at(model->list_Faces.at(i)->list_index_Points[1]);
 		//Point3 p2 = model->list_Vertices[model->list_Faces[i].list_index_Points[2]];//在对于三角形时才有效
 
-		Point3 pn = model->list_Vertices.at(model->list_Faces.at(i).list_index_Points.at(model->list_Faces.at(i).list_index_Points.length() - 1));//必须使用最后一点才成功
+		Point3 *pn = model->list_Vertices.at(model->list_Faces.at(i)->list_index_Points.at(model->list_Faces.at(i)->list_index_Points.length() - 1));//必须使用最后一点才成功
 
-		u[_X] = p1._X - p0._X;
-		u[_Y] = p1._Y - p0._Y;
-		u[_Z] = p1._Z - p0._Z;
+		u[_X] = p1->_X - p0->_X;
+		u[_Y] = p1->_Y - p0->_Y;
+		u[_Z] = p1->_Z - p0->_Z;
 
-		v[_X] = pn._X - p0._X;
-		v[_Y] = pn._Y - p0._Y;
-		v[_Z] = pn._Z - p0._Z;
+		v[_X] = pn->_X - p0->_X;
+		v[_Y] = pn->_Y - p0->_Y;
+		v[_Z] = pn->_Z - p0->_Z;
 
 		vCross(u, v, cross);//计算交叉乘积
 		vNormal(cross);//单位化
 
-		model->list_Faces[i].index_Face = i;
-		model->list_Faces[i].index_Name = i+1;
+		model->list_Faces[i]->index_Face = i;
+		model->list_Faces[i]->index_Name = i + 1;
 		fn->NX = cross[0];
 		fn->NY = cross[1];
 		fn->NZ = cross[2];
-		model->list_FaceNormal.push_back(*fn);
+		model->list_FaceNormal.push_back(fn);
 	}
 }
 
@@ -253,31 +281,31 @@ float _glUnitize(_GLModel* model, float* center)
 	float maxx, minx, maxy, miny, maxz, minz;
 	float cx, cy, cz, w, h, d;
 	float scale;
-	
+
 	if (model&&model->list_Vertices.size() > 0)
 	{
-		maxx = minx = model->list_Vertices.at(0)._X;
-		maxy = miny = model->list_Vertices.at(0)._Y;
-		maxz = minz = model->list_Vertices.at(0)._Z;
+		maxx = minx = model->list_Vertices.at(0)->_X;
+		maxy = miny = model->list_Vertices.at(0)->_Y;
+		maxz = minz = model->list_Vertices.at(0)->_Z;
 
 		for (size_t i = 1; i < model->num_Vertices; i++)
 		{
-			if (maxx < model->list_Vertices.at(i)._X)
-				maxx = model->list_Vertices.at(i)._X;
-			if (minx > model->list_Vertices.at(i)._X)
-				minx = model->list_Vertices.at(i)._X;
+			if (maxx < model->list_Vertices.at(i)->_X)
+				maxx = model->list_Vertices.at(i)->_X;
+			if (minx > model->list_Vertices.at(i)->_X)
+				minx = model->list_Vertices.at(i)->_X;
 
 
-			if (maxy < model->list_Vertices.at(i)._Y)
-				maxy = model->list_Vertices.at(i)._Y;
-			if (miny > model->list_Vertices.at(i)._Y)
-				miny = model->list_Vertices.at(i)._Y;
+			if (maxy < model->list_Vertices.at(i)->_Y)
+				maxy = model->list_Vertices.at(i)->_Y;
+			if (miny > model->list_Vertices.at(i)->_Y)
+				miny = model->list_Vertices.at(i)->_Y;
 
 
-			if (maxz < model->list_Vertices.at(i)._Z)
-				maxz = model->list_Vertices.at(i)._Z;
-			if (minz > model->list_Vertices.at(i)._Z)
-				minz = model->list_Vertices.at(i)._Z;
+			if (maxz < model->list_Vertices.at(i)->_Z)
+				maxz = model->list_Vertices.at(i)->_Z;
+			if (minz > model->list_Vertices.at(i)->_Z)
+				minz = model->list_Vertices.at(i)->_Z;
 		}
 
 		w = _glmAbs(maxx) + _glmAbs(minx);
@@ -294,13 +322,13 @@ float _glUnitize(_GLModel* model, float* center)
 		//将中心按照比例转换
 		for (size_t i = 0; i < model->num_Vertices; i++)
 		{
-			model->list_Vertices[i]._X -= cx;
-			model->list_Vertices[i]._Y -= cy;
-			model->list_Vertices[i]._Z -= cz;
+			model->list_Vertices[i]->_X -= cx;
+			model->list_Vertices[i]->_Y -= cy;
+			model->list_Vertices[i]->_Z -= cz;
 
-			model->list_Vertices[i]._X *= scale;
-			model->list_Vertices[i]._Y *= scale;
-			model->list_Vertices[i]._Z *= scale;
+			model->list_Vertices[i]->_X *= scale;
+			model->list_Vertices[i]->_Y *= scale;
+			model->list_Vertices[i]->_Z *= scale;
 		}
 
 		center[0] = 0.0;
@@ -315,8 +343,8 @@ int GetIndexFromMaterialName(_GLModel* model, QString materialName)
 {
 	for (size_t i = 0; i < model->num_Materials; i++)
 	{
-		if (materialName == model->list_Materials.at(i).materialName)
-			return (i-1);
+		if (materialName == model->list_Materials.at(i)->materialName)
+			return i;
 	}
 	return -1;
 }
@@ -326,10 +354,10 @@ void _glConstructIndexFromName(_GLModel* model)
 	int index;
 	for (size_t i = 0; i < model->num_Faces; i++)
 	{
-		QString name = model->list_Faces.at(i).materialName;
+		QString name = model->list_Faces.at(i)->materialName;
 		index = GetIndexFromMaterialName(model, name);
 		if (index >= 0)
-			model->list_Faces[i].index_Text = index;
+			model->list_Faces[i]->index_Text = index;
 	}
 }
 
@@ -354,47 +382,47 @@ void _glDraw(_GLModel* model, size_t mode)
 
 	for (size_t i = 0; i < model->num_Faces; i++)
 	{
-		Face f = model->list_Faces.at(i);
+		Face *f = model->list_Faces.at(i);
 		if (mode&_GL_SELECT)
-			glLoadName(f.index_Name);
+			glLoadName(f->index_Name);
 		if (mode&_GL_TEXTURE)
 		{
 			glEnable(GL_TEXTURE_2D);
-			if (f.index_Text > -1)//绘制指定的纹理一定要将对应的纹理先启动绑定
-				glBindTexture(GL_TEXTURE_2D, model->textureArray[f.index_Text]);
+			if (f->index_Text > -1)//绘制指定的纹理一定要将对应的纹理先启动绑定
+				glBindTexture(GL_TEXTURE_2D, model->textureArray[f->index_Text]);
 		}
 		else
 		{
 			glEnable(GL_TEXTURE_2D);
-			glBindTexture(GL_TEXTURE_2D, model->textureArray_Fake[f.index_Text]);
+			glBindTexture(GL_TEXTURE_2D, model->textureArray_Fake[f->index_Text]);
 		}
-		if (f.isS)
-			glColor3f(1.0f, 132.0/255.0, 132.0/255.0); // 颜色设置为红色  
+		if (f->isS)
+			glColor3f(1.0f, 132.0 / 255.0, 132.0 / 255.0); // 颜色设置为红色  
 		else glColor3f(1.0f, 1.0f, 1.0f);
 
 		glBegin(GL_POLYGON);
 		//glBegin(GL_QUADS);
 		if (mode&_GL_FLAT)//自己建立的面向量
 		{
-			FacetNormal fn = model->list_FaceNormal.at(f.index_Face);
-			glNormal3f(fn.NX, fn.NY, fn.NZ);
+			FacetNormal *fn = model->list_FaceNormal.at(f->index_Face);
+			glNormal3f(fn->NX, fn->NY, fn->NZ);
 		}
 
-		for (int k = 0; k < f.list_index_Points.size(); k++)
+		for (int k = 0; k < f->list_index_Points.size(); k++)
 		{
 
 			if (mode&_GL_TEXTURE)
 			{
-				TextCoords tc = model->list_Textcoords.at(f.list_index_TextCoords.at(k));
-				glTexCoord2f(tc.U, tc.V);
+				TextCoords *tc = model->list_Textcoords.at(f->list_index_TextCoords.at(k));
+				glTexCoord2f(tc->U, tc->V);
 			}
-			if (mode&_GL_SMOOTH&&f.list_index_VertNormals.size()>0)
+			if (mode&_GL_SMOOTH&&f->list_index_VertNormals.size()>0)
 			{//smooth是OBJ中读取的节点normal值
-				VertNormals vn = model->list_Normals.at(f.list_index_VertNormals.at(k));
-				glNormal3f(vn._NX, vn._NY, vn._NZ);
+				VertNormals *vn = model->list_Normals.at(f->list_index_VertNormals.at(k));
+				glNormal3f(vn->_NX, vn->_NY, vn->_NZ);
 			}
-			Point3 p = model->list_Vertices.at(f.list_index_Points.at(k));
-			glVertex3f(p._X, p._Y, p._Z);
+			Point3 *p = model->list_Vertices.at(f->list_index_Points.at(k));
+			glVertex3f(p->_X, p->_Y, p->_Z);
 		}
 		glEnd();
 
