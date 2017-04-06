@@ -126,10 +126,12 @@ void GLMainWindow::OpenOBJFile()
 	}
 
 	_glReconstructFaceIndexes(glCanvas->pModel);
-	glCanvas->InitHDC();
-	initialTextureThread();
-	wglMakeCurrent(glCanvas->hDC, glCanvas->hRC);
-	textureThread->start();
+	if (glCanvas->pModel->num_Materials > 0){
+		glCanvas->InitHDC();
+		initialTextureThread();
+		wglMakeCurrent(glCanvas->hDC, glCanvas->hRC);
+		textureThread->start();
+	}
 	_glConstructIndexFromName(glCanvas->pModel);
 	//°ó¶¨textture
 	_glFacetNormals(glCanvas->pModel);

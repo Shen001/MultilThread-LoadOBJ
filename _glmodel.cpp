@@ -368,6 +368,8 @@ int GetIndexFromMaterialName(_GLModel* model, QString materialName)
 void _glConstructIndexFromName(_GLModel* model)
 {
 	int index;
+	if (model->num_Materials <= 0)
+		return;
 	for (size_t i = 0; i < model->num_Faces; i++)
 	{
 		QString name = model->list_Faces.at(i)->materialName;
